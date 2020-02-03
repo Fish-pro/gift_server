@@ -24,7 +24,7 @@ def return_token(token,user):
     """
     data = {
         "token": token,
-        "user": UserSerializer(user, many=False).data,
+        "profile": UserSerializer(user, many=False).data,
     }
     return data
 
