@@ -47,7 +47,8 @@ class Work(BaseModle):
 
 class UserWork(BaseModle):
     '''送礼记录表'''
-    userUuid = models.ForeignKey('User', models.CASCADE, null=True, related_name='userToWorkUuid', to_field='uuid')
+    name = models.CharField(max_length=64, null=True) # 送礼人姓名
+    remarks = models.CharField(max_length=244, null=True) # 备注
     workUuid = models.ForeignKey('Work', models.CASCADE, null=True, related_name='workUserUuid', to_field='uuid')
     money = models.BigIntegerField(null=True) # 送礼金额
     quilt = models.IntegerField(default=0) # 被子数量 默认0
