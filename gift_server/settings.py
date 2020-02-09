@@ -156,34 +156,37 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'level': 'DEBUG',
             'filters': ['require_debug_true'],
-            'formatter': 'simple',
+            'formatter': 'verbose',
         },
         # 输出到文件(每周切割一次)
         'file1': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': 'access.log',
+            'filename': 'logs/access.log',
             'when': 'W0',
-            'backupCount': 12,              #备份份数
-            'formatter': 'simple',          #使用哪种formatters日志格式
+            'backupCount': 12,  # 备份份数
+            'formatter': 'simple',  # 使用哪种formatters日志格式
             'level': 'DEBUG',
+            'encoding': 'utf-8',  # 设置默认编码
         },
         # 输出到文件(每天切割一次)
         'file2': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': 'error.log',
+            'filename': 'logs/error.log',
             'when': 'D',
             'backupCount': 31,
             'formatter': 'verbose',
             'level': 'WARNING',
+            'encoding': 'utf-8',  # 设置默认编码
         },
         # 输出到文件(每周切割一次) -- 用户访问IP和访问的路径
         'file3': {
             'class': 'logging.handlers.TimedRotatingFileHandler',
-            'filename': 'ipandpath.log',
+            'filename': 'logs/ipandpath.log',
             'when': 'W0',
-            'backupCount': 12,              #备份份数
-            'formatter': 'simple',          #使用哪种formatters日志格式
+            'backupCount': 12,  # 备份份数
+            'formatter': 'simple',  # 使用哪种formatters日志格式
             'level': 'INFO',
+            'encoding': 'utf-8',  # 设置默认编码
         },
     },
     # CRITICAL > ERROR > WARNING > INFO > DEBUG > NOTEST
@@ -204,6 +207,7 @@ LOGGING = {
         },
     }
 }
+
 
 
 # Password validation
@@ -228,9 +232,9 @@ AUTH_PASSWORD_VALIDATORS = [
 # Internationalization
 # https://docs.djangoproject.com/en/2.1/topics/i18n/
 
-LANGUAGE_CODE = 'en-us'
+LANGUAGE_CODE = 'zh-hans'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Asia/Shanghai'
 
 USE_I18N = True
 
@@ -245,9 +249,38 @@ USE_TZ = True
 STATIC_URL = '/static/'
 
 REST_FRAMEWORK = {
-    'DEFAULT_PAGINATION_CLASS':  'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 100,  # 每页数目
+    # 分页配置
+    'DEFAULT_PAGINATION_CLASS': 'utils.paginations.MyPagination',
+    'PAGE_SIZE': 100,
+    # 过滤
     'DEFAULT_FILTER_BACKENDS': (
         'django_filters.rest_framework.DjangoFilterBackend',
     ),
+
+
+    'DEFAULT_THROTTLE_CLASSES': (
+        # 'rest_framework.throttling.AnonRateThrottle',
+        # 'rest_framework.throttling.UserRateThrottle'
+        'rest_framework.throttling.ScopedRateThrottle',  # throttle_scope = 'uploads'
+    ),
+    'DEFAULT_THROTTLE_RATES': {
+        # 'anon': '1/d',
+        # 'user': '5/m',
+        'sms': '5/d',
+    },
+
+
+
+    # 重构renderer
+    'DEFAULT_RENDERER_CLASSES': (
+        'utils.renderer.MyJsonRenderer',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'utils.auths.CustomAuthentication',
+    ),
+    'DEFAULT_PERMISSION_CLASSES': (
+        'utils.auths.CustomAuthorization',
+    ),
+    'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler'
 }
+
