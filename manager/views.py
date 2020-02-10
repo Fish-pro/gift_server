@@ -1,4 +1,4 @@
-from django.contrib.auth.hashers import check_password
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.shortcuts import render
 
@@ -34,10 +34,34 @@ def return_token(token,user):
         "profile": UserSerializer(user, many=False).data,
     }
     return data
+class InitManagerViews(APIView):
+    '''初始化管理员'''
+    authentication_classes = []
+    permission_classes = []
+
+    @transaction.atomic  # 加事务锁
+    def post(self,req):
+        manager = User.objects.filter(status=1,isManager=True).first()
+        if not manager:
+            user = User.objects.create(
+                name="管理员",
+                address="镇雄县",
+                gender=1,
+                age=20,
+                isManager=True,
+            )
+            UserAuth.objects.create(
+                userUuid=user,
+                tel="18487241833",
+                password=make_password("123456")
+            )
+        return http_return(200, "初始管理员化成功")
+
 
 class LoginViews(APIView):
     '''登录视图'''
-    authentication_classes = None
+    authentication_classes = []
+    permission_classes = []
 
     def post(self, req):
         tel = req.data.get("tel", None)
@@ -72,7 +96,6 @@ class UserListGenericMixinAPIView(GenericAPIView,
     filter_class = UsersFilter
     filter_backends = (DjangoFilterBackend, OrderingFilter)
     ordering = ("name",)
-
 
     @transaction.atomic  # 加事务锁
     def create(self, request, *args, **kwargs):

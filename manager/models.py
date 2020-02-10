@@ -28,6 +28,7 @@ class User(BaseModle):
     address = models.CharField(max_length=255,null=True) # 地区
     gender = models.IntegerField(default=3) # 1男 2女 3未知
     age = models.IntegerField(default=0) # 年龄
+    isManager = models.BooleanField(default=False) # 是否是管理员
 
     class Meta:
         db_table = 'tb_user'

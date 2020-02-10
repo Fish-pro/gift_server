@@ -281,6 +281,5 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'utils.auths.CustomAuthorization',
     ),
-    'EXCEPTION_HANDLER': 'utils.exceptions.custom_exception_handler'
 }
 
