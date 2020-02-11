@@ -100,7 +100,7 @@ CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
         'LOCATION': [
-            'redis://12.0.0.1:6379/0',
+            'redis://127.0.0.1:6379/0',
         ],  # redis服务ip和端口，
         'KEY_PREFIX': 'manage',
         'OPTIONS': {
@@ -282,4 +282,28 @@ REST_FRAMEWORK = {
         'utils.auths.CustomAuthorization',
     ),
 }
+
+CORS_ALLOW_METHODS = (
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+    'VIEW',
+)
+CORS_ALLOW_HEADERS = (
+    'Content-Type',
+    'token',
+    'Content-Length',
+    'Accept-Encoding',
+    'X-CSRF-Token',
+    'Authorization',
+    'accept',
+    'origin',
+    'Cache-Control',
+    'X-Requested-With',
+    'XSRF-TOKEN',
+    'X-XSRF-TOKEN'
+)
 

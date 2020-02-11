@@ -1,19 +1,23 @@
+import logging
+
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.shortcuts import render
 
 # Create your views here.
-from django_filters.rest_framework import DjangoFilterBackend, OrderingFilter
-from rest_framework.generics import GenericAPIView
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import status
+from rest_framework.filters import OrderingFilter
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, \
     DestroyModelMixin
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.viewsets import GenericViewSet
 
 from client.client_filter import save_login_log
 from manager.filters import UsersFilter
 from manager.models import UserAuth, User
-from manager.serializers import UserSerializer
+from manager.serializers import UserSerializer, UserPostserializer
 from utils.caches_func import save_token
 from utils.errors import ParamError
 from utils.random_func import get_token
@@ -78,20 +82,20 @@ class LoginViews(APIView):
         if not check_password(password, checkTel.password):
             return http_return(400, "登录密码不正确")
         token = get_token()
-        if not save_token(token, checkTel.userUuid):
+        if not save_token(token, checkTel.userUuid, "default"):
             return http_return(400, "服务器缓存错误")
-        if not save_login_log(req):
+        if not save_login_log(req, checkTel.userUuid):
             return http_return(400, "存储登录日志失败")
         return http_return(200, "登录成功", return_token(token, checkTel.userUuid))
 
 
-class UserListGenericMixinAPIView(GenericAPIView,
-                                  ListModelMixin,
+class UserListGenericMixinAPIView(ListModelMixin,
                                   CreateModelMixin,
                                   RetrieveModelMixin,
                                   UpdateModelMixin,
-                                  DestroyModelMixin):
-    queryset = User.objects.filter(status=1).all()
+                                  DestroyModelMixin,
+                                  GenericViewSet):
+    queryset = User.objects.filter(status=1, isManager=False).all()
     serializer_class = UserSerializer
     filter_class = UsersFilter
     filter_backends = (DjangoFilterBackend, OrderingFilter)
@@ -99,7 +103,13 @@ class UserListGenericMixinAPIView(GenericAPIView,
 
     @transaction.atomic  # 加事务锁
     def create(self, request, *args, **kwargs):
-        pass
+        serializer_data = UserPostserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        instance = serializer_data.create_user(serializer_data.validated_data)
+        authinstance = serializer_data.create_user_auth(serializer_data.validated_data, instance)
+        return Response(serializer_data.initial_data, status=status.HTTP_201_CREATED)
 
     def retrieve(self, request, *args, **kwargs):
         try:

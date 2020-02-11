@@ -49,7 +49,7 @@ class LoginViews(APIView):
         token = get_token()
         if not save_token(token, checkTel.userUuid):
             return http_return(400, "服务器缓存错误")
-        if not save_login_log(req):
+        if not save_login_log(req, checkTel.userUuid):
             return http_return(400, "存储登录日志失败")
         return http_return(200, "登录成功", return_token(token, checkTel.userUuid))
     

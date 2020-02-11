@@ -3,7 +3,7 @@ import logging
 from manager.models import LoginLog
 
 
-def save_login_log(request):
+def save_login_log(request, user):
     """
     保存登陆日志
     :param user:
@@ -12,8 +12,9 @@ def save_login_log(request):
     try:
         LoginLog.objects.create(
             ipAddr=request.META.get('HTTP_X_FORWARDED_FOR', None),
-            userUuid=request.user.get("userObj"),
+            userUuid=user.uuid,
             userAgent=request.META.get('HTTP_USER_AGENT', ''),
+            isManager=user.isManager
         )
     except Exception as e:
         logging.error(str(e))

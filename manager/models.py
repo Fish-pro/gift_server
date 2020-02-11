@@ -3,6 +3,9 @@
 from django.db import models
 import uuid
 
+from manager.model_choices import GENDER_CHOICES
+
+
 def get_uuid():
     """
     生成数据库uuid
@@ -26,7 +29,7 @@ class User(BaseModle):
     '''用户表'''
     name = models.CharField(max_length=64, null=True) # 姓名
     address = models.CharField(max_length=255,null=True) # 地区
-    gender = models.IntegerField(default=3) # 1男 2女 3未知
+    gender = models.IntegerField(choices=GENDER_CHOICES, default=3) # 1男 2女 3未知
     age = models.IntegerField(default=0) # 年龄
     isManager = models.BooleanField(default=False) # 是否是管理员
 
@@ -73,7 +76,7 @@ class UserAuth(BaseModle):
 class LoginLog(BaseModle):
     """登录日志"""
     ipAddr = models.CharField(max_length=126, verbose_name='IP地址', null=True)
-    userUuid = models.ForeignKey('User', models.CASCADE, null=True, related_name='longinLogUuid', to_field='uuid')
+    userUuid = models.CharField(max_length=64, null=True)
     userAgent = models.CharField(max_length=256, verbose_name='登录平台', null=True)
     isManager = models.BooleanField(default=False)  # 0 客户端登录  1 是后台管理端
 
