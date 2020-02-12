@@ -3,7 +3,7 @@
 from django.db import models
 import uuid
 
-from manager.model_choices import GENDER_CHOICES
+from utils.model_choices import GENDER_CHOICES, WORK_TYPE_CHOICES
 
 
 class UUIDTools(object):
@@ -41,13 +41,13 @@ class User(BaseModle):
 
 class Work(BaseModle):
     '''事务表'''
-    userUuid = models.ForeignKey('User', models.CASCADE, null=True, related_name='userWorkUuid', to_field='uuid') #事务人
-    type = models.IntegerField(default=1) # 1婚宴 2白事 3.其他
+    userUuid = models.CharField(max_length=64, null=True) # 事务人
+    type = models.IntegerField(choices=WORK_TYPE_CHOICES, default=1) # 1婚宴 2白事 3.其他
     name = models.CharField(max_length=64, null=True) # 事务名称
     startTime = models.BigIntegerField(null=True) # 开始时间
     endTime = models.BigIntegerField(null=True) # 结束时间
-    remarks = models.CharField(max_length=1024) # 事务备注
-    createUserUuid = models.ForeignKey('User', models.CASCADE, null=True, related_name='createUserWorkUuid', to_field='uuid') #事务人
+
+    remarks = models.CharField(max_length=1024, null=True) # 事务备注
 
     class Meta:
         db_table = 'tb_work'
@@ -56,7 +56,7 @@ class UserWork(BaseModle):
     '''送礼记录表'''
     name = models.CharField(max_length=64, null=True) # 送礼人姓名
     remarks = models.CharField(max_length=244, null=True) # 备注
-    workUuid = models.ForeignKey('Work', models.CASCADE, null=True, related_name='workUserUuid', to_field='uuid')
+    workUuid = models.CharField(max_length=64, null=True) # 事务uuid
     money = models.BigIntegerField(null=True) # 送礼金额
     quilt = models.IntegerField(default=0) # 被子数量 默认0
     woollen = models.IntegerField(default=0) # 毛毯数量 默认0

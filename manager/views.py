@@ -15,15 +15,16 @@ from rest_framework.views import APIView
 from rest_framework.viewsets import GenericViewSet
 
 from client.client_filter import save_login_log
-from manager.filters import UsersFilter
-from manager.models import UserAuth, User
-from manager.serializers import UserSerializer, UserPostserializer, UserUpdateserializer
+from manager.filters import UsersFilter, WorksFilter, UserWorksFilter
+from manager.models import UserAuth, User, Work, UserWork
+from manager.serializers import UserSerializer, UserPostserializer, UserUpdateserializer, WorkSerializer, \
+    WorkPostserializer, UserWorkPostserializer, UserWorkSerializer
 from utils.caches_func import save_token
 from utils.errors import ParamError
 from utils.random_func import get_token
 from utils.re_func import tel_match
 from utils.return_func import http_return
-from utils.return_info import USER_NOT_EXIST, PUT_SUCCESS, DEL_SUCCESS
+from utils.return_info import USER_NOT_EXIST, PUT_SUCCESS, DEL_SUCCESS, WORK_NOT_EXIST, USER_WORK_NOT_EXIST
 
 
 def return_token(token,user):
@@ -147,6 +148,107 @@ class UserListGenericMixinAPIView(ListModelMixin,
         return Response(DEL_SUCCESS)
 
 
+class WorkListGenericMixinAPIView(ListModelMixin,
+                                  CreateModelMixin,
+                                  RetrieveModelMixin,
+                                  UpdateModelMixin,
+                                  DestroyModelMixin,
+                                  GenericViewSet):
+    queryset = Work.objects.filter(status=1).all()
+    serializer_class = WorkSerializer
+    filter_class = WorksFilter
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    ordering = ("name",)
+    pagination_class = None
 
+    @transaction.atomic  # 加事务锁
+    def create(self, request, *args, **kwargs):
+        serializer_data = WorkPostserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        serializer_data.create_work(serializer_data.validated_data)
+        return Response(serializer_data.data, status=status.HTTP_201_CREATED)
 
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(WORK_NOT_EXIST)
+        serializer = UserSerializer(instance)
+        return Response(serializer.data)
 
+    @transaction.atomic  # 加事务锁
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(WORK_NOT_EXIST)
+        serializer_data = WorkPostserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        serializer_data.update_work(instance,serializer_data.validated_data)
+        return Response(PUT_SUCCESS)
+
+    @transaction.atomic  # 加事务锁
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(WORK_NOT_EXIST)
+        instance.status = 3
+        instance.save()
+        return Response(DEL_SUCCESS)
+
+class UserWorkListGenericMixinAPIView(ListModelMixin,
+                                      CreateModelMixin,
+                                      RetrieveModelMixin,
+                                      UpdateModelMixin,
+                                      DestroyModelMixin,
+                                      GenericViewSet):
+    queryset = UserWork.objects.filter(status=1).all()
+    serializer_class = UserWorkSerializer
+    filter_class = UserWorksFilter
+    filter_backends = (DjangoFilterBackend, OrderingFilter)
+    ordering = ("-createTime",)
+
+    @transaction.atomic  # 加事务锁
+    def create(self, request, *args, **kwargs):
+        serializer_data = UserWorkPostserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        serializer_data.create_user_work(serializer_data.validated_data)
+        return Response(serializer_data.data, status=status.HTTP_201_CREATED)
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(USER_WORK_NOT_EXIST)
+        serializer = UserWorkSerializer(instance)
+        return Response(serializer.data)
+
+    @transaction.atomic  # 加事务锁
+    def update(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(USER_WORK_NOT_EXIST)
+        serializer_data = UserWorkPostserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        serializer_data.update_user_work(instance, serializer_data.validated_data)
+        return Response(PUT_SUCCESS)
+
+    @transaction.atomic  # 加事务锁
+    def destroy(self, request, *args, **kwargs):
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(USER_WORK_NOT_EXIST)
+        instance.status = 3
+        instance.save()
+        return Response(DEL_SUCCESS)
