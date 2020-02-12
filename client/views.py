@@ -8,7 +8,7 @@ from rest_framework.views import APIView
 from client.client_filter import save_login_log
 from client.serializers import UserSerializer, WorkSerializer, UserWorkSerializer
 from manager.models import UserAuth, User, Work, UserWork
-from utils.auths import CustomAuthentication
+from utils.auths import ClientAuthentication
 from utils.caches_func import save_token
 from utils.paginations import MyPagination
 from utils.random_func import get_token
@@ -30,7 +30,7 @@ def return_token(token,user):
 
 class LoginViews(APIView):
     '''登录视图'''
-    authentication_classes = None
+    authentication_classes = []
 
     def post(self, req):
         tel = req.data.get("tel", None)
@@ -41,7 +41,7 @@ class LoginViews(APIView):
         password = req.data.get("password", None)
         if not password:
             return http_return(400, "请输入登录密码")
-        checkTel = UserAuth.objects.filter(tel=tel).first()
+        checkTel = UserAuth.objects.filter(tel=tel,status=1).first()
         if not checkTel:
             return http_return(400, "手机号未记录")
         if not check_password(password, checkTel.password):
@@ -55,32 +55,31 @@ class LoginViews(APIView):
     
 class WorkViews(APIView):
     '''事务视图'''
-    authentication_classes = CustomAuthentication
+    authentication_classes = [ClientAuthentication]
 
     def get(self, req):
-        user = User.objects.filter(uuid=req.user.get("uuid")).first()
-        works = Work.objects.filter(userUuid=user, status=1).all()
-        return Response(WorkSerializer(works).data)
+        works = Work.objects.filter(userUuid=req.user.get("uuid"), status=1).all()
+        return Response(WorkSerializer(works, many=True).data)
 
 class UserWorkViews(APIView):
     '''用户送礼视图'''
-    authentication_classes = CustomAuthentication
+    authentication_classes = [ClientAuthentication]
 
     def get(self, req):
         uuid = req.query_params.get("uuid", None)
-        sortType =  req.query_params.get("sortType", None)
+        sortType = req.query_params.get("sortType", None)
         if not uuid:
             return http_return(400, "请选择要查看宾客的事务")
-        work = Work.objects.filter(uuid=uuid, status=1).first()
+        work = Work.objects.filter(uuid=uuid, status=1, userUuid=req.user.get("uuid")).first()
         if not work:
             return http_return(400, "事务不存在")
-        userWork = UserWork.objects.filter(workUuid=work, status=1)
+        userWork = UserWork.objects.filter(workUuid=uuid, status=1)
         if sortType == "createTime":
             userWorks = userWork.order_by("-createTime").all()
         elif sortType == "money":
             userWorks = userWork.order_by("-money").all()
         elif sortType == "name":
-            userWorks = userWork.order_by("userUuid__name").all()
+            userWorks = userWork.order_by("name").all()
         else:
             return http_return(400, "请选择排序方式")
         pg = MyPagination()
@@ -90,7 +89,7 @@ class UserWorkViews(APIView):
 
 class SearchViews(APIView):
     '''搜索视图'''
-    authentication_classes = CustomAuthentication
+    authentication_classes = [ClientAuthentication]
 
     def get(self, req):
         uuid = req.query_params.get("uuid", None)
@@ -102,5 +101,5 @@ class SearchViews(APIView):
         keyword = req.query_params.get("keyword", None)
         if not keyword:
             return http_return(400, "请输入搜索关键词")
-        res_queryset = UserWork.objects.filter(workUuid=work, userUuid__name__icontains=keyword, status=1).order_by("-money").all()
+        res_queryset = UserWork.objects.filter(workUuid=uuid, name__contains=keyword, status=1).order_by("-money").all()
         return Response(UserWorkSerializer(res_queryset, many=True).data)

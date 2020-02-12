@@ -20,6 +20,6 @@ from manager import urls as managerUrl
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/ht/', include((clientUrl, 'client'), namespace='client')),
+    path('api/client/', include((clientUrl, 'client'), namespace='client')),
     path('api/manage/', include((managerUrl, 'manager'), namespace='manager')),
 ]

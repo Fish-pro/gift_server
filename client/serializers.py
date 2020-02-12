@@ -16,7 +16,7 @@ class UserWorkSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserWork
-        fields = ('uuid', 'name', 'address', 'money', 'quilt', 'woollen', 'fireworks', 'artillery', 'wreath', 'status')
+        fields = ('uuid', 'name', 'remarks', 'money', 'quilt', 'woollen', 'fireworks', 'artillery', 'wreath', 'status')
 
 class WorkSerializer(serializers.ModelSerializer):
     '''事务表'''
@@ -24,9 +24,11 @@ class WorkSerializer(serializers.ModelSerializer):
     totalMoney = serializers.SerializerMethodField()
 
     def get_totalMoney(self, obj):
-        allMoney = UserWork.objects.annotate(num_money=Sum('money')).filter(workUuid=obj).values('money')
+        allMoney = UserWork.objects.values('money').annotate(num_money=Sum('money')).filter(workUuid=obj.uuid,status=1)
+        if len(allMoney) == 0:
+            return 0
         return allMoney[0]['num_money']
 
     class Meta:
         model = Work
-        fields = ('uuid', 'user', 'type', 'name', 'startTime', 'endTime', 'remarks')
+        fields = ('uuid', 'type', 'name', 'startTime', 'endTime', 'remarks', 'totalMoney')

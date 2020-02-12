@@ -23,6 +23,22 @@ class CustomAuthentication(BaseAuthentication):
         return user_info, token
 
 
+class ClientAuthentication(BaseAuthentication):
+
+    def authenticate(self, request):
+        token = request.META.get('HTTP_TOKEN')
+        if not token:
+            raise AuthenticationFailed('提供有效的身份认证标识')
+        try:
+            user_info = caches['client'].get(token)
+        except Exception as e:
+            logging.error(str(e))
+            raise AuthenticationFailed('连接Redis失败')
+        if not user_info:
+            raise AuthenticationFailed('请登录后重新访问')
+        return user_info, token
+
+
 class CustomAuthorization(BasePermission):
 
     message = '对不起，你没有权限'
