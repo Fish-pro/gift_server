@@ -17,13 +17,13 @@ from rest_framework.viewsets import GenericViewSet
 from client.client_filter import save_login_log
 from manager.filters import UsersFilter
 from manager.models import UserAuth, User
-from manager.serializers import UserSerializer, UserPostserializer
+from manager.serializers import UserSerializer, UserPostserializer, UserUpdateserializer
 from utils.caches_func import save_token
 from utils.errors import ParamError
 from utils.random_func import get_token
 from utils.re_func import tel_match
 from utils.return_func import http_return
-from utils.return_info import USER_NOT_EXIST
+from utils.return_info import USER_NOT_EXIST, PUT_SUCCESS, DEL_SUCCESS
 
 
 def return_token(token,user):
@@ -76,7 +76,7 @@ class LoginViews(APIView):
         password = req.data.get("password", None)
         if not password:
             return http_return(400, "请输入登录密码")
-        checkTel = UserAuth.objects.filter(tel=tel).first()
+        checkTel = UserAuth.objects.filter(tel=tel, status=1).first()
         if not checkTel:
             return http_return(400, "手机号未记录")
         if not check_password(password, checkTel.password):
@@ -121,11 +121,30 @@ class UserListGenericMixinAPIView(ListModelMixin,
 
     @transaction.atomic  # 加事务锁
     def update(self, request, *args, **kwargs):
-        pass
+        instance = self.get_object()
+        serializer_data = UserUpdateserializer(data=request.data)
+        result = serializer_data.is_valid(raise_exception=False)
+        if not result:
+            raise ParamError(serializer_data.errors)
+        check_data = serializer_data.check_data(serializer_data.validated_data, instance.uuid)
+        instance = serializer_data.update_user(instance, check_data)
+        auth = serializer_data.update_auth(instance, check_data)
+        return Response(PUT_SUCCESS)
+
 
     @transaction.atomic  # 加事务锁
     def destroy(self, request, *args, **kwargs):
-        pass
+        # 删
+        try:
+            instance = self.get_object()
+        except Exception as e:
+            raise ParamError(USER_NOT_EXIST)
+        instance.status = 3
+        instance.save()
+        auth = instance.userAuthkUuid.first()
+        auth.status = 3
+        auth.save()
+        return Response(DEL_SUCCESS)
 
 
 

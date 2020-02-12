@@ -6,18 +6,21 @@ import uuid
 from manager.model_choices import GENDER_CHOICES
 
 
-def get_uuid():
+class UUIDTools(object):
     """
-    生成数据库uuid
-    :return:
+    生成uuid
     """
-    return "".join(str(uuid.uuid4()).split("-")).upper()
+
+    @staticmethod
+    def uuid4_hex():
+        return uuid.uuid4().hex
+
 
 class BaseModle(models.Model):
     """
     共有属性
     """
-    uuid = models.CharField(max_length=64, default=get_uuid(), unique=True)
+    uuid = models.CharField(primary_key=True, max_length=64, unique=True, default=UUIDTools.uuid4_hex)
     createTime = models.DateTimeField(auto_now_add=True, verbose_name="创建时间", null=True)
     updateTime = models.DateTimeField(auto_now=True, verbose_name="更新时间", null=True)
     status = models.IntegerField(default=1) # 1启用 2禁用 3删除
